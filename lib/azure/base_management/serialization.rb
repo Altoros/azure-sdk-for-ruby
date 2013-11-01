@@ -92,7 +92,22 @@ module Azure
         end
         builder.doc.to_xml
       end
-      
+
+      def self.virtual_machine_image_to_xml(image)
+        builder = Nokogiri::XML::Builder.new do |xml|
+          xml.UpdateAffinityGroup('xmlns'=>'http://schemas.microsoft.com/windowsazure') {
+            xml.Label Base64.encode64(image.label).strip
+            xml.Name image.name
+            xml.Label Base64.encode64(image.label).strip
+            xml.Label Base64.encode64(image.label).strip
+            xml.Label Base64.encode64(image.label).strip
+
+            xml.Description options[:description] if options[:description]
+          }
+        end
+        builder.doc.to_xml        
+      end
+
     end
   end
 end

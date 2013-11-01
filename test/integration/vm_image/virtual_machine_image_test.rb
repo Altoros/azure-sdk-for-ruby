@@ -18,7 +18,7 @@ describe Azure::VirtualMachineImageManagementService do
 
   subject { Azure::VirtualMachineImageManagementService.new }
 
-  describe "#virtual_machine_images" do
+  describe "#list_virtual_machine_images" do
 
     it "returns a list of virtual machine images" do
       virtualImages = subject.list_virtual_machine_images

@@ -55,7 +55,7 @@ module Azure::VirtualMachine
     end
     
     def required_attributes
-    	[:os, :name, :category, :locations]
+      [:os, :name, :category, :locations]
     end
   end
 end

@@ -31,7 +31,7 @@ module Azure::VirtualMachine
 
     def to_xml
       builder = Nokogiri::XML::Builder.new do |xml|
-      	xml.OSImage('xmlns'=>'http://schemas.microsoft.com/windowsazure') do
+        xml.OSImage('xmlns'=>'http://schemas.microsoft.com/windowsazure') do
           xml.Label Base64.encode64(self.label).strip
           xml.Name self.name
           xml.Category self.category

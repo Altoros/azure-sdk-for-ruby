@@ -12,22 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #--------------------------------------------------------------------------
-module Azure::VirtualMachine
-  class Image
 
-    attr_accessor :os, :name, :category, :location
 
-    def initialize(options = {})
-      @options = options
-      options.each_pair do |key, value|
-        send(:"#{key}=", value)
-      end
-    end
+module Azure::Conmpute
+
+  class Image < Resource
     
-    def validate!
-      missing_fields = required_attributes.select { |param| @options.has_key?(param) }
-      raise RuntimeError, "Required fields #{missing_fields.join(', ')} are not specified." unless missing_fields.empty?
-    end
+
+    required_attribute :os, 
+    required_attribute :name, 
+    required_attribute :category, 
+    required_attribute :location, 
+
 
     def to_xml
       builder = Nokogiri::XML::Builder.new do |xml|

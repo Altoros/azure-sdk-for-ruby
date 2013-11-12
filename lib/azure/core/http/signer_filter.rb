@@ -26,6 +26,7 @@ module Azure
         def call(req, _next)
           signature = @signer.sign(req.method, req.uri, req.headers)
           req.headers["Authorization"] = "#{@signer.name} #{signature}"
+          p req.inspect
           _next.call
         end
       end

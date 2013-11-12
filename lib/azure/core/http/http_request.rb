@@ -41,13 +41,18 @@ module Azure
         # The body of the request (IO or String)
         attr_accessor :body
 
+
+        # The body of the request (IO or String)
+        attr_accessor :http
+
+
         # Public: Create the HttpRequest
         #
         # method - Symbol. The HTTP method to use (:get, :post, :put, :del, etc...)
         # uri    - URI. The URI of the HTTP endpoint to query
         # body   - IO or String. The request body (optional)
         # current_time - String. The current time as a HTTP date string
-        def initialize(method, uri, body=nil, current_time=Time.now.httpdate)
+        def initialize(method, uri, body=nil, current_time = Time.now.httpdate)
           @method  = method
           @uri     = uri
           @body    = body
@@ -92,7 +97,7 @@ module Azure
         end
 
         # Build a default headers Hash
-        def default_headers(current_time)
+        def default_headers(current_time = Time.now.httpdate)
           headers["User-Agent"] = "Azure-SDK-For-Ruby/" + Azure::Version.to_s
           headers["x-ms-date"] = current_time
           headers["x-ms-version"] = "2012-02-12"
@@ -101,8 +106,8 @@ module Azure
 
           if body
             headers["Content-Type"]   = "application/atom+xml; charset=utf-8"
-            headers["Content-Length"] = body.bytesize.to_s
-            headers["Content-MD5"]    = Base64.strict_encode64(Digest::MD5.digest(body))
+            headers["Content-Length"] = content_length(body).to_s
+            # headers["Content-MD5"]    = Base64.strict_encode64(Digest::MD5.digest(body))
           else
             headers["Content-Length"] = "0"
             headers["Content-Type"] = ""
@@ -124,8 +129,14 @@ module Azure
         #
         # Returns a HttpResponse
         def call
+
           request = http_request_class.new(uri.request_uri, headers)
-          request.body = body if body
+
+          if body.kind_of?(IO)
+            request.body_stream = body
+          else 
+            request.body = body.to_s
+          end
 
           http = nil
           if ENV['HTTP_PROXY'] || ENV['HTTPS_PROXY']
@@ -141,17 +152,37 @@ module Azure
           end
 
           if uri.scheme.downcase == 'https'
-            # require 'net/https'
             http.use_ssl = true
             http.verify_mode = OpenSSL::SSL::VERIFY_NONE
           end
 
+          # puts headers.inspect
+
+          # http.
+          
           response = HttpResponse.new(http.request(request))
           response.uri = uri
           raise response.error unless response.success?
+
           response
         end
+
+        private 
+        
+        def content_length(body)
+          case body
+          when IO
+            body.stat.size
+          when String
+            body.bytesize
+          else
+            body.to_s.bytesize # or should we raise error here ?
+          end
+        end
+
       end
+
+
     end
   end
 end

@@ -29,15 +29,15 @@ module Azure
       attr_accessor :host
 
       def call(method, uri, body=nil, headers=nil)
-        if headers && !body.nil?
-          if headers['Content-Encoding'].nil?
-            headers['Content-Encoding'] = body.encoding.to_s
-          else 
-            body.force_encoding(headers['Content-Encoding']) 
-          end
-        end
+        # if headers && !body.nil?
+        #   if headers['Content-Encoding'].nil? && body.respond_to?(:encoding)
+        #     headers['Content-Encoding'] = body.encoding.to_s
+        #   else 
+        #     body.force_encoding(headers['Content-Encoding']) 
+        #   end
+        # end
 
-        request = Core::Http::HttpRequest.new(method, uri, body)
+        request = Azure::Core::Http::HttpRequest.new(method, uri, body)
         request.headers.merge!(headers) if headers
 
         request.headers['connection'] = 'keep-alive' if request.respond_to? :headers
@@ -46,9 +46,9 @@ module Azure
 
         response = request.call
 
-        if !response.nil? && !response.body.nil? && response.headers['content-encoding']
-          response.body.force_encoding(response.headers['content-encoding']) 
-        end
+        # if !response.nil? && !response.body.nil? && response.headers['content-encoding']
+        #   response.body.force_encoding(response.headers['content-encoding']) 
+        # end
 
         response
       end
@@ -58,6 +58,12 @@ module Azure
         uri.query = URI.encode_www_form(query) unless query == nil or query.empty?
         uri
       end
+
+      # def large_file_upload(method, uri, body=nil, headers=nil)
+
+      # end
+
+
     end
   end
 end

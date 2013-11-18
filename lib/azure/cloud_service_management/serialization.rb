@@ -25,12 +25,16 @@ module Azure
             xml.ServiceName name
             xml.Label Base64.encode64(name)
             xml.Description options[:description] || 'Explicitly created cloud service'
-            xml.Location options[:location]
+            if options[:affinity_group]
+              xml.AffinityGroup options[:affinity_group]
+            else
+              xml.Location options[:location]
+            end
           }
         end
         builder.doc.to_xml
       end
-      
+
       def self.cloud_services_from_xml(cloudXML)
         clouds = []
         cloud_services_xml = cloudXML.css('HostedServices HostedService')

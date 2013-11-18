@@ -34,6 +34,7 @@ module Azure
       # Accepted key/value pairs in options parameter are:
       # * +:location+            - String. The regional data center location where the cloud service will be created.(optional)
       # * +:description+         - String. A description for the hosted service. (optional)
+      # * +:affinity_group+      - String. Name of the existing affinity group
       #
       # See http://msdn.microsoft.com/en-us/library/windowsazure/gg441304.aspx
       #
@@ -72,14 +73,7 @@ module Azure
       # does not exist.
       def get_cloud_service(name)
         return false if name.nil?
-        flag = false
-        list_cloud_services.each do |cloud_service|
-          if cloud_service.name == name
-            flag = true
-            break
-          end
-        end
-        flag
+        list_cloud_services.any? { |cloud_service| cloud_service.name == name }
       end
 
       # Public: Deletes the specified cloud service of given subscription id from Windows Azure.

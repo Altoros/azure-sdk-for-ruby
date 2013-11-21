@@ -94,15 +94,16 @@ module Azure
       #
       # Accepted key/value pairs are:
       # * +:description+   - String. A description for the affinity group. (optional)
-      # 
+      #
       # See http://msdn.microsoft.com/en-us/library/windowsazure/gg715317.aspx
       #
       # Returns:  None
       def create_affinity_group(name, location, label, options={})
         if name.nil? or name.strip.empty?
           raise "Affinity Group name cannot be empty"
-        elsif list_affinity_groups.collect(&:name).include?(name)
-          raise Azure::Error::Error.new("ConflictError", 409, "An affinity group #{name} already exists in the current subscription.")
+        elsif affinity_group_present?(name)
+          Loggerx.warn "Affinity group #{name} already exists. Skipped..."
+          # raise Azure::Error::Error.new("ConflictError", 409, "An affinity group #{name} already exists in the current subscription.")
         else
           validate_location(location)
           body = Serialization.affinity_group_to_xml(name, location, label, options)
@@ -177,14 +178,8 @@ module Azure
         end
       end
 
-      private
-      def affinity_group(affinity_group_name)
-        if affinity_group_name.nil? or affinity_group_name.empty? or !list_affinity_groups.map{|x| x.name.downcase}.include?(affinity_group_name.downcase)
-          error = Azure::Error::Error.new("AffinityGroupNotFound", 404, "The affinity group does not exist.")
-          raise error
-        else
-          true
-        end
+      def affinity_group_present?(name)
+        list_affinity_groups.any? { |ag| ag.name.downcase == name.downcase }
       end
 
       def validate_location(location_name)
@@ -192,6 +187,16 @@ module Azure
         if !locations.map(&:downcase).include?(location_name.downcase)
           error = "Value '#{location_name}' specified for parameter 'location' is invalid. Allowed values are #{locations.join(',')}"
           raise error
+        end
+      end
+
+      private
+      def affinity_group(affinity_group_name)
+        if affinity_group_name.nil? or affinity_group_name.empty? or !affinity_group_present?(affinity_group_name)
+          error = Azure::Error::Error.new("AffinityGroupNotFound", 404, "The affinity group does not exist.")
+          raise error
+        else
+          true
         end
       end
 

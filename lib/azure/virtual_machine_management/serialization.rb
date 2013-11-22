@@ -55,6 +55,7 @@ module Azure
             xml.DeploymentSlot 'Production'
             xml.Label Base64.encode64(options[:deployment_name]).strip
             xml.RoleList { xml.Role('i:type'=>'PersistentVMRole') }
+            xml.VirtualNetworkName options[:virtual_network] if options[:virtual_network]
           }
         end
         builder.doc.at_css('Role') << role_to_xml(params, options).at_css('PersistentVMRole').children.to_s
@@ -70,7 +71,7 @@ module Azure
             xml.RoleName {xml.text params[:vm_name]}
             xml.OsVersion('i:nil' => 'true')
             xml.RoleType 'PersistentVMRole'
-           
+
             xml.ConfigurationSets {
               provisioning_configuration_to_xml(xml, params, options)
               xml.ConfigurationSet('i:type' => 'NetworkConfigurationSet') {
@@ -79,6 +80,11 @@ module Azure
                   default_endpoints_to_xml(xml, options)
                   tcp_endpoints_to_xml(xml, options[:tcp_endpoints]) if options[:tcp_endpoints]
                 }
+                if options[:subnets]
+                  xml.SubnetNames {
+                    options[:subnets].each { |subnet| xml.SubnetName subnet }
+                  }
+                end
               }
             }
             xml.Label Base64.encode64(params[:vm_name]).strip
@@ -102,6 +108,9 @@ module Azure
               xml.UserPassword params[:password]
               xml.DisableSshPasswordAuthentication 'false'
             end
+            if options[:custom_data]
+              xml.CustomData Base64.strict_encode64(options[:custom_data])
+            end
             if params[:certificate][:fingerprint]
               xml.SSH{
                 xml.PublicKeys{
@@ -112,7 +121,7 @@ module Azure
                 }
               }
             end
-          }   
+          }
         elsif options[:os_type] == 'Windows'
           xml.ConfigurationSet('i:type' => 'WindowsProvisioningConfigurationSet') {
             xml.ConfigurationSetType 'WindowsProvisioningConfiguration'
@@ -120,6 +129,9 @@ module Azure
             xml.AdminPassword params[:password]
             xml.ResetPasswordOnFirstLogon 'false'
             xml.EnableAutomaticUpdates 'true'
+            if options[:custom_data]
+              xml.CustomData Base64.strict_encode64(options[:custom_data])
+            end
             if enable_winrm?(options[:winrm_transport])
               xml.WinRM {
                 xml.Listeners {

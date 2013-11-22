@@ -40,7 +40,8 @@ module Azure
       #
       # Returns None
       def create_cloud_service(name, options={})
-        Loggerx.error_with_exit "Cloud service name is not valid " unless name
+        validate_params(name, options)
+
         if get_cloud_service(name)
           Loggerx.warn "Cloud service #{name} already exists. Skipped..."
         else
@@ -49,6 +50,19 @@ module Azure
           body = Serialization.cloud_services_to_xml(name, options)
           request = ManagementHttpRequest.new(:post, request_path, body)
           request.call
+        end
+      end
+
+      def validate_params(name, options)
+        Loggerx.error_with_exit "Cloud service name is not valid " unless name
+
+        if options[:location]
+          Azure::BaseManagementService.new.validate_location(options[:location])
+        end
+
+        affinity_group_present = Azure::BaseManagementService.new.affinity_group_present?(options[:affinity_group])
+        if options[:affinity_group] && !options[:location] && !affinity_group_present
+          Loggerx.error_with_exit "Affinity group #{options[:affinity_group]} does not exist, pass 'location' option to automatically create it"
         end
       end
 

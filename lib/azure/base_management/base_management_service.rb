@@ -186,7 +186,7 @@ module Azure
         locations = Azure::BaseManagementService.new.list_locations.collect(&:name)
         if !locations.map(&:downcase).include?(location_name.downcase)
           error = "Value '#{location_name}' specified for parameter 'location' is invalid. Allowed values are #{locations.join(',')}"
-          raise error
+          Loggerx.error_with_exit error
         end
       end
 

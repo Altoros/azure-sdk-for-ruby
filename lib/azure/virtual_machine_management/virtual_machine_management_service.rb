@@ -79,23 +79,27 @@ module Azure
       # * +:ssh_private_key_file+     - String. Path of private key file.
       # * +:ssh_certificate_file+     - String. Path of certificate file.
       # * +:ssh_port+                 - Integer. Specifies the SSH port number.
-      # * +:vm_size+                  - String. Specifies the size of the virtual machine instance.  
+      # * +:vm_size+                  - String. Specifies the size of the virtual machine instance.
       # * +:winrm_transport+          - Array. Specifies WINRM transport protocol.
+      # * +:custom_data+              - String. CustomData to pass to vm instance.
+      # * +:virtual_network+          - String. Name of the virtual network.
+      # * +:subnets+                  - Array. Subnets to connect.
       #
       # Returns Azure::VirtualMachineManagement::VirtualMachine objects of newly created instance.
       def create_virtual_machine(params, options={})
-        options[:os_type] = get_os_type(params[:image])
         validate_deployment_params(params, options)
+        options[:os_type] = get_os_type(params[:image])
         options[:cloud_service_name] = generate_cloud_service_name(params[:vm_name]) unless options[:cloud_service_name]
-        options[:storage_account_name] = generate_storage_account_name(params[:vm_name]) unless options[:storage_account_name] 
+        options[:storage_account_name] = generate_storage_account_name(params[:vm_name]) unless options[:storage_account_name]
         cloud_service = Azure::CloudServiceManagementService.new
-        cloud_service.create_cloud_service(options[:cloud_service_name], :location => params[:location])
+        cloud_service.create_cloud_service(options[:cloud_service_name], :location => params[:location], :affinity_group => options[:affinity_group])
         cloud_service.upload_certificate(options[:cloud_service_name],params[:certificate]) unless params[:certificate].empty?
         Azure::StorageManagementService.new.create_storage_account(options[:storage_account_name], :location=> params[:location])
 
         body = Serialization.deployment_to_xml(params,options)
         path = "/services/hostedservices/#{options[:cloud_service_name]}/deployments"
         Loggerx.info "Deployment in progress..."
+        # binding.pry
         request = ManagementHttpRequest.new(:post, path, body)
         request.call
         get_virtual_machine(params[:vm_name],options[:cloud_service_name])
@@ -127,7 +131,7 @@ module Azure
         else
           Loggerx.error "Cannot find virtual machine #{vm_name} under cloud service #{cloud_service_name}"
         end
-      rescue 
+      rescue
       end
 
       # Public: Shuts down the specified virtual machine.
@@ -203,7 +207,7 @@ module Azure
       end
 
       def generate_storage_account_name(vm_name)
-        random_string(vm_name+'storage').gsub(/[^0-9a-z ]/i, '').downcase[0..23] 
+        random_string(vm_name+'storage').gsub(/[^0-9a-z ]/i, '').downcase[0..23]
       end
 
       def validate_deployment_params(params, options)
@@ -218,7 +222,7 @@ module Azure
         params_keys.each do |key|
           errors << key if params[key.to_sym].nil?
         end
-        
+
         options_keys.each do |key|
           errors << key if options[key.to_sym].nil?
         end
